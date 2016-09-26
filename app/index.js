@@ -1,6 +1,7 @@
 var chalk = require('chalk'),
     generators = require('yeoman-generator'),
     us = require('underscore.string');
+    upperCamelCase = require('uppercamelcase')
 
 exports = module.exports = generators.Base.extend({
   _makeDestDir: function(dir) {
@@ -19,45 +20,137 @@ exports = module.exports = generators.Base.extend({
     var done = this.async();
 
     var prompts = [{
-      name: 'generatorModuleName',
-      message: 'What is your module\'s name ?',
-      default : this.determineAppname(),
-      desc: 'Name of your module. We will create an app with this name in current directory'
+      name: 'generatorServiceName',
+      message: 'What is your service\'s name ?',
+      default : upperCamelCase(this.determineAppname()),
+      desc: 'Name of your service. We will create a service with this name in the current directory'
+    }, {
+      name: 'generatorActiveService',
+      message: 'Will the service be an Active or Passive Service ?',
+      default : 'true',
+      desc: 'TODO'
     }];
+
 
     this.prompt(prompts, function (answers) {
       this.answers = answers;
       done();
     }.bind(this));
   },
-  deriveAnswers: function() {
-    this.answers['generatorModuleClass'] = us.classify(this.answers['generatorModuleName']);
-    this.answers['generatorModuleNameWithUnderscores'] = us(
-      this.answers['generatorModuleName']).decapitalize().underscored().value();
+
+  processActivePassive: function() {
+
+    if(this.answers.generatorActiveService === 'true' ) {
+      var done = this.async();
+
+      var prompts = [{
+        name: 'generatorNumberThreads',
+        message: 'How many threads does your active service require ?',
+        default : 1,
+        desc: 'TODO'
+      }];
+
+      this.prompt(prompts, function (answers) {
+        var propNames = Object.getOwnPropertyNames(answers);
+        for (var i = 0; i < propNames.length; i++) {
+          this.answers[propNames[i]] = answers[propNames[i]];
+        }
+        done();
+      }.bind(this));
+    }
+  },
+
+  processDDS_Support: function() {
+    var done = this.async();
+
+    var prompts = [{
+      name: 'generatorDDS_Support',
+      message: 'Does your service require DDS Support ?',
+      default : 'true',
+      desc: 'TODO'
+    }];
+
+    this.prompt(prompts, function (answers) {
+      var propNames = Object.getOwnPropertyNames(answers);
+      for (var i = 0; i < propNames.length; i++) {
+        this.answers[propNames[i]] = answers[propNames[i]];
+      }
+      done();
+    }.bind(this));
 
   },
-  askModuleWebsite: function() {
+
+  processDDS_Vendors : function() {
+
+    if(this.answers.generatorDDS_Support === 'true' ) {
+      var done = this.async();
+
+      var prompts = [{
+        name: 'generatorDDS_VendorODDS',
+        message: 'Do you wish to support OpenDDS ?',
+        default : 'true',
+        desc: 'TODO'
+      }, {
+        name: 'generatorDDS_VendorNDDS',
+        message: 'Do you wish to support NDDS ?',
+        default : 'true',
+        desc: 'TODO'
+      },{
+        name: 'generatorDDS_VendorCDDS',
+        message: 'Do you wish to support Cordex DDS ?',
+        default : 'true',
+        desc: 'TODO'
+      }];
+
+      this.prompt(prompts, function (answers) {
+        var propNames = Object.getOwnPropertyNames(answers);
+        for (var i = 0; i < propNames.length; i++) {
+          this.answers[propNames[i]] = answers[propNames[i]];
+        }
+        done();
+      }.bind(this));
+    }
+  },
+
+  processCORBA_Support: function() {
     var done = this.async();
-    var prompts = [ {
-      name: 'generatorModuleNameWithUnderscores',
-      message: 'What is your module\'s underscored name ? Will use this as the main module name:',
-      default : this.answers['generatorModuleNameWithUnderscores'],
-      desc: 'Main exported class from entry file.'
-    }, {
-      name: 'generatorModuleDescription',
-      message: 'What is your module\'s description ?',
-      default : this.determineAppname(),
-      desc: 'Description of your module.'
+
+    var prompts = [{
+      name: 'generatorCORBA_Support',
+      message: 'Does your service require CORBA Support ?',
+      default : 'true',
+      desc: 'TODO'
+    }];
+
+    this.prompt(prompts, function (answers) {
+      var propNames = Object.getOwnPropertyNames(answers);
+      for (var i = 0; i < propNames.length; i++) {
+        this.answers[propNames[i]] = answers[propNames[i]];
+      }
+      done();
+    }.bind(this));
+
+  },
+
+  processExtra: function() {
+    var done = this.async();
+
+    var prompts = [
+      {
+      name: 'generatorServiceDescription',
+      message: 'What is your Service\'s description ?',
+      default : upperCamelCase(this.determineAppname()) + " description",
+      desc: 'Description of your Service.'
     }, {
       name: 'generatorUserEmail',
       message: 'What is your email ?',
       default : this.user.git.email(),
-      desc: 'Your email, does into package.json'
+      desc: 'Your email, goes into package.json'
     }, {
       name: 'generatorUserName',
       message: 'What is your name ?',
       default : this.user.git.name(),
-      desc: 'Your name, does into package.json'
+      desc: 'Your name, goes into package.json'
     }];
     this.prompt(prompts, function (answers) {
       var propNames = Object.getOwnPropertyNames(answers);
@@ -71,39 +164,27 @@ exports = module.exports = generators.Base.extend({
     this.answers['generatorUserName'] = us.titleize(this.answers['generatorUserName']);
   },
   tellUserOurTemplate: function(){
-    this.log('We will use the values below for templating:');
+    this.log('\nThe following settings will be used to generate the service project:');
+    this.log('----------------------------------------------------------------------');
     this.log(this.answers);
+    this.log('----------------------------------------------------------------------');
   },
+
   scaffoldFolders: function(){
     this._makeDestDir('src');
-    this._makeDestDir('my_inc');
-  },
+},
   copyFiles: function(){
-    this.copy('_gitignore', '.gitignore');
-    this.template('_configure.ac', 'configure.ac', this.answers);
-    this.copy('_Makefile.am', 'Makefile.am');
-    this.template('_AUTHORS', 'AUTHORS', this.answers);
-    this.template('_LICENCE.md', 'LICENCE.md', this.answers);
-    this.template('_README.md', 'README.md', this.answers);
+    //this.copy('_gitignore', '.gitignore');
+    //this.template('_AUTHORS', 'AUTHORS', this.answers);
+    //this.template('_LICENCE.md', 'LICENCE.md', this.answers);
+    //this.template('_README.md', 'README.md', this.answers);
+
     // src dir
-    this.template('_src/_Makefile.am', 'src/Makefile.am', this.answers);
-    this.copy('_src/_main.cpp', 'src/' + this.answers['generatorModuleNameWithUnderscores'] + '.cpp');
-    this.copy('_src/_helper.cc', 'src/helper.cc');
-    this.copy('_src/_helper.cpp', 'src/helper.cpp');
-    this.copy('_src/_helper.h', 'src/helper.h');
-
-    // my_inc dir
-    this.copy('_my_inc/_Makefile.am', 'my_inc/Makefile.am');
-    this.copy('_my_inc/_myadd.cpp', 'my_inc/myadd.cpp');
-    this.copy('_my_inc/_myadd.h', 'my_inc/myadd.h');
-
+    this.template('_src/_service.h',   'src/' + this.answers['generatorServiceName'] + '.h',   this.answers);
+    this.template('_src/_service.cpp', 'src/' + this.answers['generatorServiceName'] + '.cpp', this.answers);
   },
   finalRound: function() {
-    console.log(chalk.yellow('\nEverything is ready!\n'));
-    console.log(chalk.yellow('You can type "aclocal", "autoconf" and "automake --add-missing" to configure your library.'));
-    console.log(chalk.yellow('Next type "./configure", and "make" and voila, your binary ' +
-                             this['generatorModuleNameWithUnderscores'] + ' under src directory'));
-    console.log(chalk.cyan('\nFor more information, refer to README.md.'));
-    console.log(chalk.green('\nEnjoy the ride, and have fun coding!'));
+    console.log(chalk.yellow('\nService project has been generated.!\n'));
+    console.log(chalk.yellow('You will now need to build your project files using MPC.'));
   }
 });

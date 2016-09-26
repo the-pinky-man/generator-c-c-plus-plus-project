@@ -1,14 +1,25 @@
 {
-  "name": "generator-c-c-plus-plus-project",
+  "name": "generator-service",
   "version": "0.1.0",
   "description": "Yeoman generator for a C/C++ project: comes with Automake & Autoconf for 'Automake C++ Tutorial'. Supports C too.",
   "files": [
     "app"
   ],
-  "keywords": ["yeoman-generator", "c/c++", "c", "c++", "automake", "autoconf", "c plus", "plus", "c plus plus"],
+  "keywords": [
+    "yeoman-generator",
+    "c/c++",
+    "c",
+    "c++",
+    "automake",
+    "autoconf",
+    "c plus",
+    "plus",
+    "c plus plus"
+  ],
   "dependencies": {
     "chalk": "*",
     "underscore.string": "*",
+    "uppercamelcase": "^1.1.0",
     "yeoman-generator": "^0.20.2"
   },
   "license": "Apache-2.0",
@@ -17,10 +28,10 @@
     "url": "http://barisyuksel.com"
   },
   "contributors": [
-        {
-          "name": "Baris Yuksel",
-          "url": "http://barisyuksel.com"
-        }
+    {
+      "name": "Baris Yuksel",
+      "url": "http://barisyuksel.com"
+    }
   ],
   "repository": {
     "type": "git",
