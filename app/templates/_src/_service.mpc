@@ -1,0 +1,3 @@
+<% if (generatorUseODDS == true) {%> project (<%= generatorServiceName %>_ODDS) : <%= generatorServiceName %>, odds_pubsub { } <% } %>
+<% if (generatorUseNDDS == true) {%> project (<%= generatorServiceName %>_NDDS) : <%= generatorServiceName %>, ndds_pubsub { } <% } %>
+<% if (generatorUseCDDS == true) {%> project (<%= generatorServiceName %>_CDDS) : <%= generatorServiceName %>, cdds_pubsub { } <% } %>

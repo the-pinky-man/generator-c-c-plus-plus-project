@@ -1,0 +1,12 @@
+<% if (generatorDDS_Support == 'N') {%> project (<%= generatorServiceName %>) <% } %> <% if (generatorDDS_Support == 'Y') {%> project <% } %> <% if (generatorCORBA_Support == 'Y') {%> : taflib <% } %> {
+
+  sharedname = *
+
+  dynamicflags += <%= generatorServiceNameUpper %>_BUILD_DLL
+
+  prebuild += perl $(ACE_ROOT)/bin/generate_export_file.pl <%= generatorServiceName %> > <%= generatorServiceName %>_export.h
+
+  Source_Files {
+    <%= generatorServiceName %>.cpp
+  }
+}

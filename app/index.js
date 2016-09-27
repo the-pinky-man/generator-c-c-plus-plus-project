@@ -1,7 +1,8 @@
 var chalk = require('chalk'),
     generators = require('yeoman-generator'),
     us = require('underscore.string');
-    upperCamelCase = require('uppercamelcase')
+    upperCamelCase = require('uppercamelcase'),
+    upperCase = require('upper-case');
 
 exports = module.exports = generators.Base.extend({
   _makeDestDir: function(dir) {
@@ -24,11 +25,29 @@ exports = module.exports = generators.Base.extend({
       message: 'What is your service\'s name ?',
       default : upperCamelCase(this.determineAppname()),
       desc: 'Name of your service. We will create a service with this name in the current directory'
-    }, {
+    },
+     {
+        name: 'generatorNamespace',
+        message: 'What is your Namespace ?',
+        default : "lasagne",
+        desc: 'Name of your namespace.'
+      },
+      {
       name: 'generatorActiveService',
       message: 'Will the service be an Active or Passive Service ?',
-      default : 'true',
-      desc: 'TODO'
+      default : 'active',
+      type: 'list',
+      desc: 'TODO',
+        choices: [
+          {
+            name: 'Active',
+            value: 'active'
+          },
+          {
+            name: 'Passive',
+            value: 'passive'
+          }
+        ]
     }];
 
 
@@ -40,7 +59,7 @@ exports = module.exports = generators.Base.extend({
 
   processActivePassive: function() {
 
-    if(this.answers.generatorActiveService === 'true' ) {
+    if(this.answers.generatorActiveService === 'active' ) {
       var done = this.async();
 
       var prompts = [{
@@ -65,15 +84,15 @@ exports = module.exports = generators.Base.extend({
 
     var prompts = [{
       name: 'generatorDDS_Support',
-      message: 'Does your service require DDS Support ?',
-      default : 'true',
+      message: 'Does your service require DDS Support [Y/n]?',
+      default : 'Y',
       desc: 'TODO'
     }];
 
     this.prompt(prompts, function (answers) {
       var propNames = Object.getOwnPropertyNames(answers);
       for (var i = 0; i < propNames.length; i++) {
-        this.answers[propNames[i]] = answers[propNames[i]];
+        this.answers[propNames[i]] = answers[propNames[i]].toUpperCase();
       }
       done();
     }.bind(this));
@@ -82,25 +101,34 @@ exports = module.exports = generators.Base.extend({
 
   processDDS_Vendors : function() {
 
-    if(this.answers.generatorDDS_Support === 'true' ) {
+    if(this.answers.generatorDDS_Support === 'Y' ) {
       var done = this.async();
 
-      var prompts = [{
-        name: 'generatorDDS_VendorODDS',
-        message: 'Do you wish to support OpenDDS ?',
-        default : 'true',
-        desc: 'TODO'
-      }, {
-        name: 'generatorDDS_VendorNDDS',
-        message: 'Do you wish to support NDDS ?',
-        default : 'true',
-        desc: 'TODO'
-      },{
-        name: 'generatorDDS_VendorCDDS',
-        message: 'Do you wish to support Cordex DDS ?',
-        default : 'true',
-        desc: 'TODO'
-      }];
+      var prompts = [
+        {
+          name: 'generatorOpenDDS_Vendors',
+          message: 'What DDS Vendors do you wish to support ?',
+          //default : 'generatorDDS_VendorODDS',
+          type: 'checkbox',
+          desc: 'TODO',
+          choices: [
+            {
+              name: 'Use OpenDDS?',
+              value: 'generatorDDS_VendorODDS',
+              checked: true
+            },
+            {
+              name: 'Use NDDS?',
+              value: 'generatorDDS_VendorNDDS',
+              checked: true
+            },
+            {
+              name: 'Use Cordex DDS?',
+              value: 'generatorDDS_VendorCDDS',
+              checked: true
+            }
+          ]
+        }];
 
       this.prompt(prompts, function (answers) {
         var propNames = Object.getOwnPropertyNames(answers);
@@ -117,15 +145,15 @@ exports = module.exports = generators.Base.extend({
 
     var prompts = [{
       name: 'generatorCORBA_Support',
-      message: 'Does your service require CORBA Support ?',
-      default : 'true',
+      message: 'Does your service require CORBA Support [Y/n]?',
+      default : 'Y',
       desc: 'TODO'
     }];
 
     this.prompt(prompts, function (answers) {
       var propNames = Object.getOwnPropertyNames(answers);
       for (var i = 0; i < propNames.length; i++) {
-        this.answers[propNames[i]] = answers[propNames[i]];
+        this.answers[propNames[i]] = answers[propNames[i]].toUpperCase();
       }
       done();
     }.bind(this));
@@ -172,17 +200,61 @@ exports = module.exports = generators.Base.extend({
 
   scaffoldFolders: function(){
     this._makeDestDir('src');
-},
-  copyFiles: function(){
-    //this.copy('_gitignore', '.gitignore');
-    //this.template('_AUTHORS', 'AUTHORS', this.answers);
-    //this.template('_LICENCE.md', 'LICENCE.md', this.answers);
-    //this.template('_README.md', 'README.md', this.answers);
-
-    // src dir
-    this.template('_src/_service.h',   'src/' + this.answers['generatorServiceName'] + '.h',   this.answers);
-    this.template('_src/_service.cpp', 'src/' + this.answers['generatorServiceName'] + '.cpp', this.answers);
   },
+
+  generateGlobals: function() {
+    this.answers['generatorServiceNameUpper'] = upperCase(this.answers.generatorServiceName);
+    this.answers['generatorNamespaceUpper'] = upperCamelCase(this.answers.generatorNamespace);
+    this.answers['generatorDateGenerated'] = new Date().toLocaleDateString();;
+  },
+
+  generateHeader: function(){
+
+    // Construct the guard
+    this.answers['generatorHeaderGuard'] = "_" + upperCase(this.answers['generatorServiceName']) + "_" + (new Date).getTime() + "_H_";
+
+    this.answers['generatorNumThreadsVar'] = "";
+
+    if(this.answers.generatorActiveService === 'active' ) {
+      this.answers['generatorNumThreadsVar'] = "int NUM_SVC_THREADS = " + this.answers.generatorNumberThreads ;
+    }
+
+    this.template('_src/_service.h',   'src/' + this.answers['generatorServiceName'] + '.h',   this.answers);
+  },
+
+  generateBody: function(){
+    this.template('_src/_service.cpp',   'src/' + this.answers['generatorServiceName'] + '.cpp',   this.answers);
+  },
+
+  generateMpc: function(){
+
+    if(this.answers.generatorDDS_Support === 'Y' ) {
+
+      this.answers['generatorUseODDS'] = false;
+      this.answers['generatorUseNDDS'] = false;
+      this.answers['generatorUseCDDS'] = false;
+
+      // Lets work what DDS vendors we need.
+      if(this.answers['generatorOpenDDS_Vendors'].indexOf('generatorDDS_VendorODDS') != -1) {
+        this.answers['generatorUseODDS'] = true;
+      }
+      if(this.answers['generatorOpenDDS_Vendors'].indexOf('generatorDDS_VendorNDDS') != -1) {
+        this.answers['generatorUseNDDS'] = true;
+      }
+      if(this.answers['generatorOpenDDS_Vendors'].indexOf('generatorDDS_VendorCDDS') != -1) {
+        this.answers['generatorUseCDDS'] = true;
+      }
+
+      // We need a mpb + mpc in this case
+      this.template('_src/_service.mpb', './' + this.answers['generatorServiceName'] + '.mpb', this.answers);
+      this.template('_src/_service.mpc', './' + this.answers['generatorServiceName'] + '.mpc', this.answers);
+    } else {
+      // Our mpb becomes our mpc.
+      this.template('_src/_service.mpb', './' + this.answers['generatorServiceName'] + '.mpc', this.answers);
+    }
+  },
+
+
   finalRound: function() {
     console.log(chalk.yellow('\nService project has been generated.!\n'));
     console.log(chalk.yellow('You will now need to build your project files using MPC.'));
